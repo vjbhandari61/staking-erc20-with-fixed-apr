@@ -1,6 +1,3 @@
-Here's the entire `README.md` file in markdown format for you to copy and paste:
-
-```markdown
 # ERC20 Staking Contract
 
 This is a smart contract that allows users to stake ERC20 tokens and earn rewards over time. The contract supports staking, claiming rewards, compounding rewards, and withdrawing staked tokens.
