@@ -9,7 +9,8 @@ contract ERC20Staking {
 
     IERC20 public immutable token;
     uint private totalStaked = 0;
-    uint256 public constant RATE_PER_SECOND = 0.1 * 1 ether;
+    uint256 public constant RATE_PER_SECOND_NUMERATOR = 1;
+    uint256 public constant RATE_PER_SECOND_DENOMINATOR = 10;
 
     // mappings
     mapping(address => uint) private balances;
@@ -21,7 +22,6 @@ contract ERC20Staking {
     event Claim(address indexed _user, uint256 _claimedAmt);
     event Compound(address indexed _user, uint256 _compoundedAmt);
     event Withdraw(address indexed _user, uint256 _withdrawnAmt);
-    event Debug(uint256 blocktime);
 
     // errors
     error InsufficientBalance(uint requested, uint256 available);
@@ -51,11 +51,9 @@ contract ERC20Staking {
 
     function rewards(address _user) public view returns (uint256) {
         uint256 balance = balances[_user];
-        uint256 rate = RATE_PER_SECOND;
-        uint256 time = block.timestamp - lastUpdated[msg.sender];
+        uint256 time = block.timestamp - lastUpdated[_user];
 
-        uint256 reward = balance * rate;
-        reward = (reward * time) / 10 ** 18;
+        uint256 reward = (balance * RATE_PER_SECOND_NUMERATOR * time) / (RATE_PER_SECOND_DENOMINATOR * 10 ** 18);
         return reward;
     }
 
@@ -64,10 +62,10 @@ contract ERC20Staking {
             uint amt = rewards(msg.sender);
             token.transfer(msg.sender, amt);
             claimed[msg.sender] += amt;
+            balances[msg.sender] -= amt;
 
             _updateLastUpdated(msg.sender);
             
-            emit Debug(block.timestamp);
             emit Claim(msg.sender, amt);
         } else {
             revert InsufficientReward();
@@ -115,6 +113,10 @@ contract ERC20Staking {
 
     function getClaimed(address _user) external view returns (uint) {
         return claimed[_user];
+    }
+
+    function getLastUpdatedAt(address _user) external view returns (uint) {
+        return lastUpdated[_user];
     }
 
     receive() external payable {
